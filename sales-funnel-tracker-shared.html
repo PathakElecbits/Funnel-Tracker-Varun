@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sales funnel tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root{
+    --ink:#20242B;
+    --paper:#FAF9F6;
+    --panel:#FFFFFF;
+    --line:#E4E1D8;
+    --slate:#5B6472;
+    --slate-light:#8A90A0;
+    --brass:#A67C3D;
+    --brass-light:#F3E8D6;
+    --sage:#3F6E52;
+    --sage-light:#E4EFE7;
+    --rust:#B0503B;
+    --rust-light:#F7E6E1;
+    --steel:#3E5E8C;
+    --steel-light:#E4EAF3;
+    --amber:#B08A2E;
+    --amber-light:#F6EEDA;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  #tracker-root{
+    font-family:'Inter',sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:28px 24px 48px;
+    max-width:1120px;
+    margin:0 auto;
+  }
+  h1,h2,h3{font-family:'Space Grotesk',sans-serif;font-weight:600;margin:0;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--slate-light);}
+  .header-row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+  .header-row h1{font-size:26px;}
+  .header-row p{margin:4px 0 0;color:var(--slate);font-size:13.5px;}
+  .btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+    padding:10px 18px;border-radius:2px;cursor:pointer;
+  }
+  .btn:hover{background:#3a4150;}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--ink);}
+  .btn-sm{padding:6px 12px;font-size:12.5px;}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px;}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--brass);padding:14px 16px;}
+  .kpi .label{font-size:11.5px;color:var(--slate);text-transform:uppercase;letter-spacing:0.04em;font-family:'IBM Plex Mono',monospace;}
+  .kpi .value{font-family:'Space Grotesk',sans-serif;font-size:22px;margin-top:6px;}
+
+  .funnel-wrap{background:var(--panel);border:1px solid var(--line);padding:18px 20px 14px;margin-bottom:26px;}
+  .funnel-title{font-size:13px;color:var(--slate);margin-bottom:14px;font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;}
+  .funnel-track{display:flex;height:52px;align-items:stretch;gap:2px;}
+  .funnel-seg{display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:flex-basis .3s;min-width:44px;position:relative;}
+  .funnel-seg .n{font-size:15px;font-weight:600;}
+  .funnel-legend{display:flex;gap:16px;margin-top:10px;flex-wrap:wrap;}
+  .funnel-legend span{font-size:12px;color:var(--slate);display:flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;display:inline-block;border-radius:1px;}
+
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .tab{font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;border:1px solid var(--line);background:var(--panel);cursor:pointer;color:var(--slate);}
+  .tab.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);}
+  thead th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--slate-light);padding:10px 12px;border-bottom:1px solid var(--line);font-weight:500;}
+  tbody td{padding:12px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:top;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FCFBF8;}
+  .cust{font-weight:600;}
+  .req{color:var(--slate);font-size:12.5px;max-width:220px;}
+  .num{font-family:'IBM Plex Mono',monospace;}
+  .badge{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:2px;white-space:nowrap;display:inline-block;}
+  .b-lead{background:#EEEDE6;color:var(--slate);}
+  .b-contacted{background:var(--steel-light);color:var(--steel);}
+  .b-quoted{background:var(--amber-light);color:var(--amber);}
+  .b-confirmed{background:var(--brass-light);color:var(--brass);}
+  .b-converted{background:var(--sage-light);color:var(--sage);}
+  .b-lost{background:var(--rust-light);color:var(--rust);}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  select.stage-sel{font-family:'Inter',sans-serif;font-size:12px;padding:5px 6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);}
+  .empty{text-align:center;padding:48px 20px;color:var(--slate);}
+  .empty .big{font-family:'Space Grotesk',sans-serif;font-size:16px;color:var(--ink);margin-bottom:6px;}
+
+  .overlay{position:fixed;inset:0;background:rgba(32,36,43,0.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;z-index:50;}
+  .panel{background:var(--panel);width:100%;max-width:520px;border:1px solid var(--line);padding:24px 26px;}
+  .panel h2{font-size:18px;margin-bottom:16px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;color:var(--slate);margin-bottom:5px;font-family:'IBM Plex Mono',monospace;}
+  .field input, .field select, .field textarea{
+    width:100%;font-family:'Inter',sans-serif;font-size:13.5px;padding:9px 10px;
+    border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:56px;font-family:'Inter',sans-serif;}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .panel-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;}
+  .hint{font-size:11.5px;color:var(--slate-light);margin-top:10px;}
+  .status-msg{font-size:12px;color:var(--slate-light);margin-top:8px;}
+
+  @media (max-width:720px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    table thead{display:none;}
+    table, tbody, tr, td{display:block;width:100%;}
+    tbody tr{border-bottom:1px solid var(--line);padding:10px 0;}
+    tbody td{border-bottom:none;padding:4px 0;}
+    .field-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="tracker-root">
+  <div class="header-row">
+    <div>
+      <div class="eyebrow">Pipeline</div>
+      <h1>Sales funnel tracker</h1>
+      <p>Log leads, track them through the funnel, and see what actually converts.</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="hint" id="syncStatus" style="margin:0;"></span>
+      <button class="btn btn-ghost btn-sm" id="settingsBtn">Sheet settings</button>
+      <button class="btn" id="openAddBtn">+ Add lead</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="funnel-wrap">
+    <div class="funnel-title">Funnel &mdash; leads by stage</div>
+    <div class="funnel-track" id="funnelTrack"></div>
+    <div class="funnel-legend" id="funnelLegend"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs" id="stageTabs"></div>
+  </div>
+
+  <div id="tableWrap"></div>
+</div>
+
+<script>
+(function(){
+  var STAGES = ['Lead','Contacted','Quoted','Confirmed','Converted','Lost'];
+  var STAGE_CLASS = {Lead:'b-lead',Contacted:'b-contacted',Quoted:'b-quoted',Confirmed:'b-confirmed',Converted:'b-converted',Lost:'b-lost'};
+  var STAGE_COLOR = {Lead:'#8A90A0',Contacted:'#3E5E8C',Quoted:'#B08A2E',Confirmed:'#A67C3D',Converted:'#3F6E52',Lost:'#B0503B'};
+  var STORAGE_KEY = 'leads';
+
+  var leads = [];
+  var currentFilter = 'All';
+  var editingId = null;
+  var loaded = false;
+  var scriptUrl = localStorage.getItem('sheetScriptUrl') || '';
+  var pollTimer = null;
+
+  var fmt = new Intl.NumberFormat('en-IN', {style:'currency', currency:'INR', maximumFractionDigits:0});
+
+  function uid(){ return 'l' + Date.now() + Math.floor(Math.random()*1000); }
+
+  function root(sel){ return document.querySelector(sel); }
+
+  function setSyncStatus(msg){
+    var el = root('#syncStatus');
+    if(el) el.textContent = msg;
+  }
+
+  async function fetchLeads(showLoading){
+    if(!scriptUrl) return;
+    if(showLoading) setSyncStatus('Syncing...');
+    try{
+      var res = await fetch(scriptUrl, {method:'GET'});
+      if(!res.ok) throw new Error('Request failed: ' + res.status);
+      var data = await res.json();
+      leads = (data || []).map(function(l){
+        return Object.assign({}, l, {
+          expectedValue: l.expectedValue === '' ? 0 : Number(l.expectedValue),
+          actualValue: l.actualValue,
+          createdAt: Number(l.createdAt) || 0
+        });
+      });
+      loaded = true;
+      setSyncStatus('Synced just now');
+      render();
+    }catch(e){
+      setSyncStatus('Could not reach the sheet. Check settings.');
+      loaded = true;
+      render();
+    }
+  }
+
+  async function upsertLead(lead){
+    if(!scriptUrl) return;
+    try{
+      await fetch(scriptUrl, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'upsert', lead: lead})
+      });
+      await fetchLeads(false);
+    }catch(e){
+      setSyncStatus('Save failed. Check your connection.');
+    }
+  }
+
+  async function deleteLead(id){
+    if(!scriptUrl) return;
+    try{
+      await fetch(scriptUrl, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'delete', id: id})
+      });
+      await fetchLeads(false);
+    }catch(e){
+      setSyncStatus('Delete failed. Check your connection.');
+    }
+  }
+
+  function startPolling(){
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(function(){ fetchLeads(false); }, 15000);
+  }
+
+  function openSettings(forceOpen){
+    var overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML =
+      '<div class="panel">'+
+        '<h2>Connect your team sheet</h2>'+
+        '<p class="hint" style="margin-bottom:14px;">Paste the Apps Script web app URL (ends in <code>/exec</code>) from your Google Sheet deployment. Everyone on the team pastes the same URL once in their browser.</p>'+
+        '<div class="field"><label>Web app URL</label><input type="text" id="s-url" value="'+escapeHtml(scriptUrl)+'" placeholder="https://script.google.com/macros/s/.../exec"></div>'+
+        '<div class="panel-actions">'+
+          (forceOpen ? '' : '<button class="btn btn-ghost" id="s-cancel">Cancel</button>')+
+          '<button class="btn" id="s-save">Connect</button>'+
+        '</div>'+
+        '<div class="status-msg" id="s-status"></div>'+
+      '</div>';
+    document.body.appendChild(overlay);
+    if(!forceOpen){
+      overlay.querySelector('#s-cancel').addEventListener('click', function(){ overlay.remove(); });
+      overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+    }
+    overlay.querySelector('#s-save').addEventListener('click', async function(){
+      var url = overlay.querySelector('#s-url').value.trim();
+      if(!url){
+        overlay.querySelector('#s-status').textContent = 'Paste the web app URL to continue.';
+        return;
+      }
+      scriptUrl = url;
+      localStorage.setItem('sheetScriptUrl', url);
+      overlay.querySelector('#s-status').textContent = 'Connecting...';
+      await fetchLeads(true);
+      startPolling();
+      overlay.remove();
+    });
+  }
+
+  function renderKpis(){
+    var active = leads.filter(function(l){ return l.stage !== 'Lost' && l.stage !== 'Converted'; });
+    var pipelineValue = active.reduce(function(s,l){ return s + (Number(l.expectedValue)||0); }, 0);
+    var converted = leads.filter(function(l){ return l.stage === 'Converted'; });
+    var convertedValue = converted.reduce(function(s,l){ return s + (Number(l.actualValue)||Number(l.expectedValue)||0); }, 0);
+    var closed = leads.filter(function(l){ return l.stage === 'Converted' || l.stage === 'Lost'; });
+    var convRate = closed.length ? Math.round((converted.length / closed.length) * 100) : 0;
+
+    var kpis = [
+      {label:'Open pipeline value', value: fmt.format(pipelineValue)},
+      {label:'Converted value', value: fmt.format(convertedValue)},
+      {label:'Total leads', value: leads.length},
+      {label:'Conversion rate (closed)', value: convRate + '%'}
+    ];
+    root('#kpiGrid').innerHTML = kpis.map(function(k){
+      return '<div class="kpi"><div class="label">'+k.label+'</div><div class="value">'+k.value+'</div></div>';
+    }).join('');
+  }
+
+  function renderFunnel(){
+    var counts = {};
+    STAGES.forEach(function(s){ counts[s] = 0; });
+    leads.forEach(function(l){ counts[l.stage] = (counts[l.stage]||0) + 1; });
+    var max = Math.max.apply(null, STAGES.map(function(s){ return counts[s]; }).concat([1]));
+
+    root('#funnelTrack').innerHTML = STAGES.map(function(s){
+      var basis = counts[s] === 0 ? 1 : (counts[s] / max) * 8 + 1;
+      return '<div class="funnel-seg" style="background:'+STAGE_COLOR[s]+';flex:'+basis+' 1 0;">'+
+        '<div class="n">'+counts[s]+'</div></div>';
+    }).join('');
+
+    root('#funnelLegend').innerHTML = STAGES.map(function(s){
+      return '<span><span class="dot" style="background:'+STAGE_COLOR[s]+'"></span>'+s+'</span>';
+    }).join('');
+  }
+
+  function renderTabs(){
+    var tabs = ['All'].concat(STAGES);
+    root('#stageTabs').innerHTML = tabs.map(function(t){
+      var count = t === 'All' ? leads.length : leads.filter(function(l){ return l.stage === t; }).length;
+      return '<div class="tab '+(t===currentFilter?'active':'')+'" data-stage="'+t+'">'+t+' ('+count+')</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(el){
+      el.addEventListener('click', function(){
+        currentFilter = el.getAttribute('data-stage');
+        render();
+      });
+    });
+  }
+
+  function renderTable(){
+    var filtered = currentFilter === 'All' ? leads : leads.filter(function(l){ return l.stage === currentFilter; });
+    filtered = filtered.slice().sort(function(a,b){ return b.createdAt - a.createdAt; });
+
+    if(!loaded){
+      root('#tableWrap').innerHTML = '<div class="empty">Loading leads&hellip;</div>';
+      return;
+    }
+    if(filtered.length === 0){
+      root('#tableWrap').innerHTML = '<div class="empty"><div class="big">No leads here yet</div>Add a lead to start tracking it through the funnel.</div>';
+      return;
+    }
+
+    var rows = filtered.map(function(l){
+      var actual = (l.stage === 'Confirmed' || l.stage === 'Converted')
+        ? (l.actualValue !== '' && l.actualValue !== undefined && l.actualValue !== null ? fmt.format(Number(l.actualValue)) : '<span style="color:var(--slate-light)">not set</span>')
+        : '<span style="color:var(--slate-light)">&mdash;</span>';
+
+      var stageOptions = STAGES.map(function(s){
+        return '<option value="'+s+'" '+(s===l.stage?'selected':'')+'>'+s+'</option>';
+      }).join('');
+
+      return '<tr>'+
+        '<td><div class="cust">'+escapeHtml(l.customerName)+'</div><div class="req">'+escapeHtml(l.requirement||'')+'</div></td>'+
+        '<td class="num">'+ (l.volume ? escapeHtml(String(l.volume)) + (l.volumeUnit ? ' ' + escapeHtml(l.volumeUnit) : '') : '&mdash;') +'</td>'+
+        '<td class="num">'+ fmt.format(Number(l.expectedValue)||0) +'</td>'+
+        '<td><span class="badge '+STAGE_CLASS[l.stage]+'">'+l.stage+'</span></td>'+
+        '<td class="num">'+ actual +'</td>'+
+        '<td>'+
+          '<div class="row-actions">'+
+            '<select class="stage-sel" data-id="'+l.id+'">'+stageOptions+'</select>'+
+            '<button class="btn btn-ghost btn-sm" data-edit="'+l.id+'">Edit</button>'+
+            '<button class="btn btn-ghost btn-sm" data-del="'+l.id+'">Delete</button>'+
+          '</div>'+
+        '</td>'+
+      '</tr>';
+    }).join('');
+
+    root('#tableWrap').innerHTML =
+      '<table><thead><tr>'+
+        '<th>Customer / requirement</th><th>Volume</th><th>Expected value</th><th>Stage</th><th>Order value</th><th>Actions</th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table>';
+
+    Array.prototype.forEach.call(document.querySelectorAll('.stage-sel'), function(el){
+      el.addEventListener('change', function(){
+        var id = el.getAttribute('data-id');
+        var lead = leads.find(function(l){ return l.id === id; });
+        if(lead){
+          lead.stage = el.value;
+          setSyncStatus('Saving...');
+          upsertLead(lead);
+        }
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'), function(el){
+      el.addEventListener('click', function(){ openForm(el.getAttribute('data-edit')); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-del]'), function(el){
+      el.addEventListener('click', function(){
+        var id = el.getAttribute('data-del');
+        setSyncStatus('Deleting...');
+        deleteLead(id);
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    var d = document.createElement('div');
+    d.textContent = str == null ? '' : str;
+    return d.innerHTML;
+  }
+
+  function render(){
+    renderKpis();
+    renderFunnel();
+    renderTabs();
+    renderTable();
+  }
+
+  function openForm(id){
+    editingId = id || null;
+    var lead = id ? leads.find(function(l){ return l.id === id; }) : null;
+
+    var overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.innerHTML =
+      '<div class="panel">'+
+        '<h2>'+(lead ? 'Edit lead' : 'Add lead')+'</h2>'+
+        '<div class="field"><label>Customer / company name</label><input type="text" id="f-customer" value="'+(lead?escapeHtml(lead.customerName):'')+'" placeholder="Acme Textiles Pvt Ltd"></div>'+
+        '<div class="field"><label>Requirement details</label><textarea id="f-requirement" placeholder="e.g. 200 GSM cotton fabric, custom print">'+(lead?escapeHtml(lead.requirement||''):'')+'</textarea></div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label>Volume</label><input type="text" id="f-volume" value="'+(lead&&lead.volume!=null?escapeHtml(String(lead.volume)):'')+'" placeholder="500"></div>'+
+          '<div class="field"><label>Unit</label><input type="text" id="f-unit" value="'+(lead?escapeHtml(lead.volumeUnit||''):'')+'" placeholder="units / kg / tons"></div>'+
+        '</div>'+
+        '<div class="field-row">'+
+          '<div class="field"><label>Expected order value (&#8377;)</label><input type="number" id="f-expected" value="'+(lead&&lead.expectedValue!=null?lead.expectedValue:'')+'" placeholder="150000"></div>'+
+          '<div class="field"><label>Stage</label><select id="f-stage">'+STAGES.map(function(s){ return '<option value="'+s+'" '+(lead&&lead.stage===s?'selected':'')+'>'+s+'</option>'; }).join('')+'</select></div>'+
+        '</div>'+
+        '<div class="field"><label>Exact order value (&#8377; &mdash; once confirmed / converted)</label><input type="number" id="f-actual" value="'+(lead&&lead.actualValue!=null?lead.actualValue:'')+'" placeholder="142000"></div>'+
+        '<div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Any other detail worth remembering">'+(lead?escapeHtml(lead.notes||''):'')+'</textarea></div>'+
+        '<div class="panel-actions">'+
+          '<button class="btn btn-ghost" id="f-cancel">Cancel</button>'+
+          '<button class="btn" id="f-save">'+(lead?'Save changes':'Add lead')+'</button>'+
+        '</div>'+
+        '<div class="status-msg" id="f-status"></div>'+
+      '</div>';
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#f-cancel').addEventListener('click', function(){ overlay.remove(); });
+    overlay.addEventListener('click', function(e){ if(e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('#f-save').addEventListener('click', async function(){
+      var customer = overlay.querySelector('#f-customer').value.trim();
+      if(!customer){
+        overlay.querySelector('#f-status').textContent = 'Add a customer name to continue.';
+        return;
+      }
+      var data = {
+        id: lead ? lead.id : uid(),
+        customerName: customer,
+        requirement: overlay.querySelector('#f-requirement').value.trim(),
+        volume: overlay.querySelector('#f-volume').value.trim(),
+        volumeUnit: overlay.querySelector('#f-unit').value.trim(),
+        expectedValue: overlay.querySelector('#f-expected').value || 0,
+        stage: overlay.querySelector('#f-stage').value,
+        actualValue: overlay.querySelector('#f-actual').value,
+        notes: overlay.querySelector('#f-notes').value.trim(),
+        createdAt: lead ? lead.createdAt : Date.now()
+      };
+      overlay.querySelector('#f-status').textContent = 'Saving...';
+      await upsertLead(data);
+      overlay.remove();
+    });
+  }
+
+  root('#openAddBtn').addEventListener('click', function(){ openForm(null); });
+  root('#settingsBtn').addEventListener('click', function(){ openSettings(false); });
+
+  if(scriptUrl){
+    fetchLeads(true);
+    startPolling();
+  } else {
+    loaded = true;
+    render();
+    openSettings(true);
+  }
+})();
+</script>
+</body>
+</html>
